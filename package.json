@@ -2,6 +2,7 @@
   "name": "dashwise-desktop-launcher",
   "version": "0.1.0",
   "description": "Local shortcuts for Dashwise and Home Assistant",
+  "license": "AGPL-3.0-only",
   "main": "dist/main.cjs",
   "type": "module",
   "scripts": {
