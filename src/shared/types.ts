@@ -1,5 +1,14 @@
 export type ConnectionMode = 'dashwise' | 'mqtt' | 'serverless';
 export type ShortcutType = 'app' | 'shell' | 'deeplink' | 'macro';
+export type RecordedKeyModifier = 'alt' | 'control' | 'meta' | 'shift';
+export type ExecutionSource = 'manual' | 'mqtt' | 'dashwise';
+
+export interface RecordedKey {
+  code: string;
+  key: string;
+  modifiers: RecordedKeyModifier[];
+  delay: number;
+}
 
 export interface Shortcut {
   id: string;
@@ -42,7 +51,22 @@ export interface MqttConnection {
   lastError?: string;
 }
 
-export interface ExecutionResult { success: boolean; error?: string; }
+export interface ExecutionResult {
+  success: boolean;
+  error?: string;
+}
+
+export interface HistoryEntry {
+  id: string;
+  shortcutId: string;
+  shortcutName: string;
+  shortcutIcon: string;
+  shortcutType: ShortcutType;
+  source: ExecutionSource;
+  success: boolean;
+  error?: string;
+  executedAt: string;
+}
 
 export interface ShortcutInput {
   name: string;
@@ -53,11 +77,15 @@ export interface ShortcutInput {
   exposeToMqtt: boolean;
 }
 
-export interface AppInfo { name: string; path: string; }
+export interface AppInfo {
+  name: string;
+  path: string;
+}
 
 export interface AppState {
   settings: Settings;
   shortcuts: Shortcut[];
+  history: HistoryEntry[];
   server: Omit<ServerConnection, 'authToken'>;
   mqtt: Omit<MqttConnection, 'password'>;
 }
