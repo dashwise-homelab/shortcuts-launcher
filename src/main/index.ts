@@ -16,42 +16,193 @@ let executor: ShortcutExecutor;
 let dashwise: DashwiseClient;
 let mqttAdapter: MqttAdapter;
 
-function broadcast(event: string): void { mainWindow?.webContents.send('launcher:event', event); }
+function broadcast(event: string): void {
+  mainWindow?.webContents.send('launcher:event', event);
+}
 function createWindow(): void {
-  mainWindow = new BrowserWindow({ width: 1180, height: 780, minWidth: 960, minHeight: 650, title: 'Dashwise Desktop Launcher', frame: false, backgroundColor: '#4ab9ca', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  mainWindow = new BrowserWindow({
+    width: 1180,
+    height: 780,
+    minWidth: 250,
+    minHeight: 650,
+    title: 'Dashwise Shortcuts Launcher (Desktop)',
+    icon: path.join(__dirname, 'assets/dashwise-icon.png'),
+    frame: false,
+    backgroundColor: '#4ab9ca',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
   void mainWindow.loadFile(path.join(__dirname, 'index.html'));
-  mainWindow.on('closed', () => { mainWindow = undefined; });
+  mainWindow.on('closed', () => {
+    mainWindow = undefined;
+  });
 }
 function registerIpc(): void {
-  ipcMain.handle('state:get', () => ({ settings: store.settings(), shortcuts: store.shortcuts(), server: store.server(), mqtt: store.mqtt() }));
-  ipcMain.handle('onboarding:complete', (_e, mode: 'dashwise' | 'mqtt') => { store.completeOnboarding(mode); if (mode === 'dashwise') void dashwise.connect(); if (mode === 'mqtt') mqttAdapter.connect(); });
-  ipcMain.handle('shortcut:save', async (_e, input: ShortcutInput, id?: string) => { const saved = store.saveShortcut(input, id); broadcast('state-changed'); dashwise.queueSync(); void mqttAdapter.refresh().catch(() => undefined); return saved; });
-  ipcMain.handle('shortcut:duplicate', async (_e, id: string) => { const saved = store.duplicateShortcut(id); broadcast('state-changed'); dashwise.queueSync(); void mqttAdapter.refresh().catch(() => undefined); return saved; });
-  ipcMain.handle('shortcut:delete', async (_e, id: string) => { await mqttAdapter.removeShortcut(id); store.deleteShortcut(id); broadcast('state-changed'); dashwise.queueSync(); void mqttAdapter.refresh().catch(() => undefined); });
-  ipcMain.handle('shortcut:execute', (_e, id: string) => executor.executeShortcut(id));
+  ipcMain.handle('state:get', () => ({
+    settings: store.settings(),
+    shortcuts: store.shortcuts(),
+    history: store.history(),
+    server: store.server(),
+    mqtt: store.mqtt(),
+  }));
+  ipcMain.handle('onboarding:complete', (_e, mode: 'dashwise' | 'mqtt') => {
+    store.completeOnboarding(mode);
+    const server = store.server(true);
+    if (server.serverUrl && server.authToken) void dashwise.connect();
+    if (store.mqtt().host) mqttAdapter.connect();
+  });
+  ipcMain.handle('shortcut:save', async (_e, input: ShortcutInput, id?: string) => {
+    const saved = store.saveShortcut(input, id);
+    broadcast('state-changed');
+    dashwise.queueSync();
+    void mqttAdapter.refresh().catch(() => undefined);
+    return saved;
+  });
+  ipcMain.handle('shortcut:duplicate', async (_e, id: string) => {
+    const saved = store.duplicateShortcut(id);
+    broadcast('state-changed');
+    dashwise.queueSync();
+    void mqttAdapter.refresh().catch(() => undefined);
+    return saved;
+  });
+  ipcMain.handle('shortcut:delete', async (_e, id: string) => {
+    await mqttAdapter.removeShortcut(id);
+    store.deleteShortcut(id);
+    broadcast('state-changed');
+    dashwise.queueSync();
+    void mqttAdapter.refresh().catch(() => undefined);
+  });
+  ipcMain.handle('shortcut:execute', async (_e, id: string) => {
+    const result = await executor.executeShortcut(id, 'manual');
+    broadcast('state-changed');
+    return result;
+  });
   ipcMain.handle('apps:list', () => listApps());
-  ipcMain.handle('server:configure', async (_e, input: { serverUrl: string; authToken: string }) => { store.saveServer(input); await dashwise.connect(); });
+  ipcMain.handle(
+    'server:configure',
+    async (_e, input: { serverUrl: string; authToken: string }) => {
+      store.saveServer(input);
+      await dashwise.connect();
+    },
+  );
   ipcMain.handle('server:reconnect', () => dashwise.connect());
-  ipcMain.handle('server:disconnect', () => { dashwise.disconnect(); store.clearServerCredentials(); broadcast('state-changed'); });
+  ipcMain.handle('server:disconnect', () => {
+    dashwise.disconnect();
+    store.clearServerCredentials();
+    broadcast('state-changed');
+  });
   ipcMain.handle('server:sync', () => dashwise.sync());
-  ipcMain.handle('mqtt:configure', (_e, input: { host: string; port: number; username: string; password: string; tls: boolean; clientId: string }) => { store.saveMqtt(input); mqttAdapter.connect(); });
-  ipcMain.handle('mqtt:test', (_e, input: { host: string; port: number; username: string; password: string; tls: boolean; clientId: string }) => mqttAdapter.test(input));
+  ipcMain.handle(
+    'mqtt:configure',
+    (
+      _e,
+      input: {
+        host: string;
+        port: number;
+        username: string;
+        password: string;
+        tls: boolean;
+        clientId: string;
+      },
+    ) => {
+      store.saveMqtt(input);
+      mqttAdapter.connect();
+    },
+  );
+  ipcMain.handle(
+    'mqtt:test',
+    (
+      _e,
+      input: {
+        host: string;
+        port: number;
+        username: string;
+        password: string;
+        tls: boolean;
+        clientId: string;
+      },
+    ) => mqttAdapter.test(input),
+  );
   ipcMain.handle('mqtt:connect', () => mqttAdapter.connect());
   ipcMain.handle('mqtt:disconnect', () => mqttAdapter.disconnect());
-  ipcMain.handle('settings:device-name', (_e, name: string) => { store.setDeviceName(name); broadcast('state-changed'); dashwise.queueSync(); void mqttAdapter.refresh().catch(() => undefined); });
+  ipcMain.handle('settings:device-name', (_e, name: string) => {
+    store.setDeviceName(name);
+    broadcast('state-changed');
+    dashwise.queueSync();
+    void mqttAdapter.refresh().catch(() => undefined);
+  });
   ipcMain.handle('window:close', () => mainWindow?.close());
   ipcMain.handle('window:minimize', () => mainWindow?.minimize());
-  ipcMain.handle('window:toggle-maximize', () => mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize());
+  ipcMain.handle('window:toggle-maximize', () =>
+    mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize(),
+  );
+  ipcMain.handle('external:open', (_e, url: string) => {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') throw new Error('Only HTTPS links can be opened');
+    return shell.openExternal(parsed.toString());
+  });
 }
 async function listApps(): Promise<AppInfo[]> {
-  if (process.platform === 'linux') { try { const { stdout } = await execFileAsync('bash', ['-lc', "find /usr/share/applications ~/.local/share/applications -maxdepth 1 -name '*.desktop' -print 2>/dev/null | head -80"]); return stdout.split('\n').filter(Boolean).map((file) => ({ name: path.basename(file, '.desktop').replace(/[-_]/g, ' '), path: file })); } catch { return []; } }
-  if (process.platform === 'darwin') { try { const { stdout } = await execFileAsync('bash', ['-lc', "find /Applications ~/Applications -maxdepth 1 -name '*.app' -print 2>/dev/null | head -80"]); return stdout.split('\n').filter(Boolean).map((file) => ({ name: path.basename(file, '.app'), path: file })); } catch { return []; } }
-  return [{ name: 'Calculator', path: 'calc.exe' }, { name: 'Notepad', path: 'notepad.exe' }];
+  if (process.platform === 'linux') {
+    try {
+      const { stdout } = await execFileAsync('bash', [
+        '-lc',
+        "find /usr/share/applications ~/.local/share/applications -maxdepth 1 -name '*.desktop' -print 2>/dev/null | head -80",
+      ]);
+      return stdout
+        .split('\n')
+        .filter(Boolean)
+        .map((file) => ({
+          name: path.basename(file, '.desktop').replace(/[-_]/g, ' '),
+          path: file,
+        }));
+    } catch {
+      return [];
+    }
+  }
+  if (process.platform === 'darwin') {
+    try {
+      const { stdout } = await execFileAsync('bash', [
+        '-lc',
+        "find /Applications ~/Applications -maxdepth 1 -name '*.app' -print 2>/dev/null | head -80",
+      ]);
+      return stdout
+        .split('\n')
+        .filter(Boolean)
+        .map((file) => ({ name: path.basename(file, '.app'), path: file }));
+    } catch {
+      return [];
+    }
+  }
+  return [
+    { name: 'Calculator', path: 'calc.exe' },
+    { name: 'Notepad', path: 'notepad.exe' },
+  ];
 }
 app.whenReady().then(async () => {
-  store = await Store.create(); executor = new ShortcutExecutor(store); dashwise = new DashwiseClient(store, executor, broadcast, () => mainWindow); mqttAdapter = new MqttAdapter(store, executor, broadcast, () => mainWindow); registerIpc(); createWindow();
-  if (store.settings().onboardingCompleted) { if (store.settings().selectedMode === 'dashwise') void dashwise.connect(); if (store.settings().selectedMode === 'mqtt') mqttAdapter.connect(); }
-  app.on('activate', () => { if (!mainWindow) createWindow(); });
+  store = await Store.create();
+  executor = new ShortcutExecutor(store);
+  dashwise = new DashwiseClient(store, executor, broadcast, () => mainWindow);
+  mqttAdapter = new MqttAdapter(store, executor, broadcast, () => mainWindow);
+  registerIpc();
+  createWindow();
+  if (store.settings().onboardingCompleted) {
+    const server = store.server(true);
+    if (server.serverUrl && server.authToken) void dashwise.connect();
+    if (store.mqtt().host) mqttAdapter.connect();
+  }
+  app.on('activate', () => {
+    if (!mainWindow) createWindow();
+  });
 });
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('before-quit', () => { dashwise?.disconnect(); mqttAdapter?.disconnect(); });
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+app.on('before-quit', () => {
+  dashwise?.disconnect();
+  mqttAdapter?.disconnect();
+});
