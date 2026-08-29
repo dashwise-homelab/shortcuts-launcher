@@ -5,7 +5,8 @@ import type { ShortcutInput } from './shared/types.js';
 const api: LauncherApi & { onStateChanged(callback: () => void): () => void } = {
   getState: () => ipcRenderer.invoke('state:get'),
   completeOnboarding: (mode) => ipcRenderer.invoke('onboarding:complete', mode),
-  saveShortcut: (input: ShortcutInput, id?: string) => ipcRenderer.invoke('shortcut:save', input, id),
+  saveShortcut: (input: ShortcutInput, id?: string) =>
+    ipcRenderer.invoke('shortcut:save', input, id),
   duplicateShortcut: (id) => ipcRenderer.invoke('shortcut:duplicate', id),
   deleteShortcut: (id) => ipcRenderer.invoke('shortcut:delete', id),
   executeShortcut: (id) => ipcRenderer.invoke('shortcut:execute', id),
@@ -22,6 +23,13 @@ const api: LauncherApi & { onStateChanged(callback: () => void): () => void } = 
   closeWindow: () => ipcRenderer.invoke('window:close'),
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
   toggleMaximizeWindow: () => ipcRenderer.invoke('window:toggle-maximize'),
-  onStateChanged: (callback) => { const listener = (_event: Electron.IpcRendererEvent, value: string) => { if (value === 'state-changed' || value === 'state') callback(); }; ipcRenderer.on('launcher:event', listener); return () => ipcRenderer.removeListener('launcher:event', listener); }
+  openExternal: (url) => ipcRenderer.invoke('external:open', url),
+  onStateChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, value: string) => {
+      if (value === 'state-changed' || value === 'state') callback();
+    };
+    ipcRenderer.on('launcher:event', listener);
+    return () => ipcRenderer.removeListener('launcher:event', listener);
+  },
 };
 contextBridge.exposeInMainWorld('launcher', api);

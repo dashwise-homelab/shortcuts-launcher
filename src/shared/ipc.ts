@@ -12,12 +12,27 @@ export interface LauncherApi {
   reconnectServer(): Promise<void>;
   disconnectServer(): Promise<void>;
   syncServer(): Promise<void>;
-  configureMqtt(input: { host: string; port: number; username: string; password: string; tls: boolean; clientId: string }): Promise<void>;
-  testMqtt(input: { host: string; port: number; username: string; password: string; tls: boolean; clientId: string }): Promise<{ success: boolean; error?: string }>;
+  configureMqtt(input: {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    tls: boolean;
+    clientId: string;
+  }): Promise<void>;
+  testMqtt(input: {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    tls: boolean;
+    clientId: string;
+  }): Promise<{ success: boolean; error?: string }>;
   connectMqtt(): Promise<void>;
   disconnectMqtt(): Promise<void>;
   setDeviceName(name: string): Promise<void>;
   closeWindow(): Promise<void>;
   minimizeWindow(): Promise<void>;
   toggleMaximizeWindow(): Promise<void>;
+  openExternal(url: string): Promise<void>;
 }
