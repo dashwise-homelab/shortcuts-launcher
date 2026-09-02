@@ -1,5 +1,4 @@
 import { WebSocket } from 'ws';
-import { randomUUID } from 'node:crypto';
 import type { BrowserWindow } from 'electron';
 import type { Shortcut } from '../../shared/types.js';
 import { Store } from '../storage/db.js';
@@ -117,7 +116,7 @@ export class DashwiseClient {
         });
         this.notify('state');
       });
-      socket.on('message', (data) => void this.onMessage(String(data)));
+      socket.on('message', (data) => void this.onMessage(String(data), socket));
       socket.on('close', () => {
         this.socket = undefined;
         if (!this.stopped) this.scheduleReconnect();
@@ -145,7 +144,7 @@ export class DashwiseClient {
     }, delay);
     this.notify('state');
   }
-  private async onMessage(raw: string): Promise<void> {
+  private async onMessage(raw: string, socket: WebSocket): Promise<void> {
     let message: Record<string, unknown>;
     try {
       message = JSON.parse(raw);
@@ -158,20 +157,18 @@ export class DashwiseClient {
       typeof message.shortcutId !== 'string'
     )
       return;
-    const cfg = this.store.server();
-    const parts = message.shortcutId.split('.');
-    const id = parts.length === 2 ? parts[1] : message.shortcutId;
+    const id = message.shortcutId;
     const shortcut = this.store.shortcut(id);
-    const allowed =
-      Boolean(shortcut?.exposeToDashwise) && (!parts.length || parts[0] === cfg.sessionId);
+    const allowed = Boolean(shortcut?.exposeToDashwise);
     const result = allowed
       ? await this.executor.executeShortcut(id, 'dashwise')
       : { success: false, error: 'Shortcut is not available to Dashwise' };
     if (allowed) this.notify('state');
-    this.socket?.send(
+    if (socket.readyState !== WebSocket.OPEN) return;
+    socket.send(
       JSON.stringify({
         type: 'shortcut:result',
-        requestId: message.requestId || randomUUID(),
+        requestId: message.requestId,
         success: result.success,
         ...(result.error ? { error: result.error } : {}),
       }),
