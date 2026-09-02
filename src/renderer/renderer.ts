@@ -2,16 +2,19 @@ import { icon } from '@fortawesome/fontawesome-svg-core';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import {
+  faCirclePlay,
+  faCircleXmark,
+  faCopy,
+  faPenToSquare,
+} from '@fortawesome/free-regular-svg-icons';
+import {
   faArrowRight,
   faBolt,
-  faCircleXmark,
   faCircle,
   faClockRotateLeft,
-  faCopy,
   faGlobe,
   faLayerGroup,
   faLink,
-  faPlay,
   faPlus,
   faServer,
   faTerminal,
@@ -20,7 +23,6 @@ import {
   faWindowMaximize,
   faWindowMinimize,
   faXmark,
-  faPen,
 } from '@fortawesome/free-solid-svg-icons';
 import type { LauncherApi } from '../shared/ipc.js';
 import type {
@@ -486,10 +488,10 @@ function shortcutCard(s: Shortcut): string {
         </div>
         <div class="actions">
           <button class="btn small" aria-label="Run" data-action="run" data-id="${esc(s.id)}">
-            ${renderIcon(faPlay)}
+            ${renderIcon(faCirclePlay)}
           </button>
           <button class="btn small" aria-label="Edit" data-action="edit" data-id="${esc(s.id)}">
-            ${renderIcon(faPen)}
+            ${renderIcon(faPenToSquare)}
           </button>
           <button class="btn small" aria-label="Copy" data-action="duplicate" data-id="${esc(s.id)}">
             ${renderIcon(faCopy)}
