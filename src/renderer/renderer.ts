@@ -32,6 +32,7 @@ import type {
   ShortcutInput,
   ShortcutType,
 } from '../shared/types.js';
+import { APP_VERSION } from '../shared/version.js';
 
 declare global {
   interface Window {
@@ -304,6 +305,7 @@ function renderApp(): void {
           <div class="window-brand">
             <span class="home-icon">${appIcon()}</span>
             <span>Launcher</span>
+            <span class="version-badge">${esc(APP_VERSION)}</span>
           </div>
           <div class="window-title">${title}</div>
           <div class="window-controls">

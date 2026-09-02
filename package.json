@@ -6,7 +6,7 @@
   "main": "dist/main.cjs",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs v0.1",
     "format": "prettier --write \"src/**/*.{ts,css,html}\" \"scripts/**/*.mjs\" package.json tsconfig.json pnpm-workspace.yaml README.md .prettierrc",
     "format:check": "prettier --check \"src/**/*.{ts,css,html}\" \"scripts/**/*.mjs\" package.json tsconfig.json pnpm-workspace.yaml README.md .prettierrc",
     "typecheck": "tsc --noEmit",

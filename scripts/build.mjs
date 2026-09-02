@@ -1,11 +1,20 @@
 import { build } from 'esbuild';
 import { cp, mkdir, rm } from 'node:fs/promises';
 
+const version = process.argv[2];
+if (!version) {
+  throw new Error('Usage: node scripts/build.mjs <version>');
+}
+const buildOptions = {
+  define: { __APP_VERSION__: JSON.stringify(version) },
+};
+
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 
 await Promise.all([
   build({
+    ...buildOptions,
     entryPoints: ['src/main/index.ts'],
     bundle: true,
     platform: 'node',
@@ -15,6 +24,7 @@ await Promise.all([
     sourcemap: true,
   }),
   build({
+    ...buildOptions,
     entryPoints: ['src/preload.ts'],
     bundle: true,
     platform: 'node',
@@ -24,6 +34,7 @@ await Promise.all([
     sourcemap: true,
   }),
   build({
+    ...buildOptions,
     entryPoints: ['src/renderer/renderer.ts'],
     bundle: true,
     platform: 'browser',

@@ -2,6 +2,7 @@ import mqtt, { type MqttClient } from 'mqtt';
 import type { BrowserWindow } from 'electron';
 import { Store } from '../storage/db.js';
 import { ShortcutExecutor } from '../shortcuts/executor.js';
+import { APP_VERSION } from '../../shared/version.js';
 
 export class MqttAdapter {
   private client?: MqttClient;
@@ -126,7 +127,7 @@ export class MqttAdapter {
         name: shortcut.name,
         command_topic: this.topic(shortcut.id),
         payload_press: 'PRESS',
-        origin: { name: 'Dashwise Shortcuts Launcher (Desktop)', sw: '0.1.0' },
+        origin: { name: 'Dashwise Shortcuts Launcher (Desktop)', sw: APP_VERSION },
         device: {
           identifiers: [this.store.settings().launcherId],
           name: 'Dashwise Shortcuts Launcher (Desktop)',

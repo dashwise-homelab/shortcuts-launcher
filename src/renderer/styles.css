@@ -76,6 +76,16 @@ button {
   font-size: 26px;
   letter-spacing: -0.7px;
 }
+.version-badge {
+  padding: 3px 6px;
+  border: 1px solid #3f6870;
+  border-radius: 999px;
+  color: #8ed9e4;
+  background: #20373b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
 .home-icon {
   width: 29px;
   height: 29px;
