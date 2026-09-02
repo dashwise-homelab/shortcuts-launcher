@@ -277,14 +277,21 @@ function sidebar(): string {
         </button>
       </nav>
       <div class="sidebar-footer">
-        <a
-          class="github"
-          href="https://github.com/andreasmolnardev/dashwise-next"
-          data-action="open-github"
-        >
-          ${renderIcon(faGithub)}
-          <span>GitHub</span>
-        </a>
+        <div class="github-card">
+          <div class="github">
+            ${renderIcon(faGithub)}
+            <span>GitHub</span>
+          </div>
+          <div class="repo-links">
+            <a href="https://github.com/andreasmolnardev/dashwise-next" data-action="open-github">
+              <span>Dashwise</span>
+            </a>
+            <span class="repo-divider" aria-hidden="true">|</span>
+            <a href="https://github.com/dashwise-homelab/shortcuts-launcher" data-action="open-github">
+              <span>Shortcuts</span>
+            </a>
+          </div>
+        </div>
       </div>
     </aside>
   `;
